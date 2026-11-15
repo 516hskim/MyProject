@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b2b">
+  <title>주차나침반 | Park Compass</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172437;
+      --muted: #67768a;
+      --line: #e3e9f0;
+      --navy: #101b2b;
+      --navy-2: #1b2d43;
+      --green: #1ecb8b;
+      --green-soft: #e7faf2;
+      --blue: #3978f6;
+      --blue-soft: #edf3ff;
+      --amber: #f3ad3d;
+      --surface: #ffffff;
+      --canvas: #f2f5f8;
+      --radius: 20px;
+      font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: radial-gradient(circle at 85% 5%, #dde8f4 0, transparent 32%), var(--canvas);
+      color: var(--ink);
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .display {
+      width: min(1440px, 100% - 40px);
+      min-height: 820px;
+      margin: 24px auto;
+      overflow: hidden;
+      background: #f7f9fb;
+      border: 1px solid #dce4ed;
+      border-radius: 28px;
+      box-shadow: 0 24px 80px #1724371c;
+    }
+    .topbar {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 34px;
+      color: #fff;
+      background: var(--navy);
+    }
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .brand-mark {
+      width: 40px; height: 40px; display: grid; place-items: center;
+      border-radius: 13px; color: #09251b; background: var(--green); font-weight: 900;
+      font-size: 20px; box-shadow: 0 0 28px #1ecb8b54;
+    }
+    .brand-name { font-weight: 800; letter-spacing: -.04em; font-size: 19px; }
+    .brand-en { margin-left: 8px; color: #9eacbd; font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+    .top-meta { display: flex; align-items: center; gap: 18px; color: #c5d0dc; font-size: 13px; }
+    .demo-badge { padding: 8px 12px; border: 1px solid #405168; border-radius: 99px; color: #d8e2ec; }
+    .demo-badge b { color: #ffcb71; font-weight: 800; }
+    .driver-pill { display: flex; align-items: center; gap: 9px; }
+    .avatar { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 50%; background: #344860; color: #fff; font-weight: 700; }
+    .stagebar { display: flex; align-items: center; gap: 9px; padding: 21px 34px 0; }
+    .stage {
+      display: flex; align-items: center; gap: 9px; color: #9aa7b6; font-size: 13px; font-weight: 700;
+    }
+    .stage span { width: 25px; height: 25px; border-radius: 50%; display: grid; place-items: center; background: #e7ecf2; color: #8390a0; font-size: 12px; }
+    .stage.active { color: var(--ink); }
+    .stage.active span, .stage.done span { color: #fff; background: var(--green); }
+    .stage.done { color: #526375; }
+    .stage-line { width: 46px; height: 1px; margin: 0 5px; background: #dce3ea; }
+    .workspace { padding: 20px 34px 30px; }
+    .screen { display: none; }
+    .screen.visible { display: block; animation: enter .25s ease-out; }
+    @keyframes enter { from { opacity: .3; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .columns { display: grid; grid-template-columns: minmax(0, 1.58fr) minmax(300px, .82fr); gap: 20px; align-items: stretch; }
+    .main-card, .side-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+    .main-card { padding: 28px; min-height: 650px; }
+    .side-card { padding: 24px; }
+    .eyebrow { color: #25896a; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 9px 0 8px; font-size: clamp(25px, 2.4vw, 34px); letter-spacing: -.055em; line-height: 1.2; }
+    h2 { margin: 0; font-size: 19px; letter-spacing: -.04em; }
+    h3 { margin: 0; font-size: 15px; }
+    p { margin: 0; }
+    .subhead { max-width: 720px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .search-row { display: flex; gap: 12px; margin: 22px 0 13px; }
+    .input-wrap { flex: 1; position: relative; }
+    .input-wrap label { position: absolute; left: 14px; top: 8px; font-size: 10px; color: #8b98a8; font-weight: 800; letter-spacing: .04em; }
+    .input-wrap input { width: 100%; height: 58px; padding: 23px 14px 8px; outline: 0; border: 1px solid #d9e1e9; border-radius: 13px; color: var(--ink); background: #fbfcfe; font-size: 15px; font-weight: 700; }
+    .input-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #3978f61c; }
+    .primary-btn, .secondary-btn, .dark-btn {
+      min-height: 52px; padding: 0 19px; border: 0; border-radius: 13px; font-weight: 800; transition: transform .15s, filter .15s;
+    }
+    .primary-btn { color: #06271b; background: var(--green); box-shadow: 0 7px 17px #1ecb8b32; }
+    .primary-btn:hover, .secondary-btn:hover, .dark-btn:hover { filter: brightness(.97); transform: translateY(-1px); }
+    .secondary-btn { color: #26384d; background: #eef2f6; }
+    .dark-btn { color: #fff; background: var(--navy-2); }
+    .modes { display: flex; align-items: center; gap: 8px; margin-bottom: 17px; }
+    .mode-label { color: #8996a6; font-size: 12px; font-weight: 700; margin-right: 3px; }
+    .mode { border: 1px solid #dde5ec; border-radius: 99px; background: #fff; color: #607084; padding: 8px 13px; font-size: 12px; font-weight: 800; }
+    .mode.active { color: #176747; border-color: #a8e8ce; background: var(--green-soft); }
+    .section-row { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 0 11px; }
+    .section-row small { color: #8794a3; font-size: 11px; }
+    .lot-list { display: grid; gap: 10px; }
+    .lot-card {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; padding: 16px 17px;
+      border: 1px solid #e3e9ef; border-radius: 15px; background: #fff; transition: .16s;
+    }
+    .lot-card:hover { border-color: #87d9bb; box-shadow: 0 8px 24px #1724370c; transform: translateY(-1px); }
+    .lot-card.recommended { border-color: #83d7b7; background: linear-gradient(105deg, #f3fcf8, #fff 72%); }
+    .lot-title { display: flex; align-items: center; gap: 8px; font-weight: 850; font-size: 15px; }
+    .recommend { color: #177d58; background: #d9f7e9; border-radius: 99px; padding: 5px 8px; font-size: 10px; font-weight: 900; }
+    .lot-meta { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .lot-metrics { display: flex; align-items: center; gap: 14px; color: #556579; font-size: 12px; }
+    .lot-metrics b { color: var(--ink); }
+    .available { align-self: center; text-align: right; min-width: 75px; }
+    .available strong { display: block; color: #149766; font-size: 25px; letter-spacing: -.05em; }
+    .available span { color: #8a98a8; font-size: 10px; font-weight: 700; }
+    .lot-action { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; padding-top: 11px; margin-top: 2px; border-top: 1px solid #edf0f4; }
+    .lot-action span { color: #8390a0; font-size: 11px; }
+    .text-btn { border: 0; padding: 4px 0; background: transparent; color: #2567d7; font-size: 12px; font-weight: 850; }
+    .side-card { display: flex; flex-direction: column; gap: 19px; }
+    .destination-head { display: flex; justify-content: space-between; align-items: flex-start; }
+    .destination-head p { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .pin { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 14px; background: var(--blue-soft); color: var(--blue); font-size: 19px; }
+    .building-card { position: relative; min-height: 190px; overflow: hidden; padding: 20px; border-radius: 17px; color: #fff; background: linear-gradient(140deg, #234260, #162b40 75%); }
+    .building-card:after { content: ""; position: absolute; width: 240px; height: 240px; right: -65px; bottom: -143px; border: 1px solid #ffffff30; border-radius: 48%; box-shadow: 0 0 0 18px #ffffff08, 0 0 0 42px #ffffff08; }
+    .building-label { color: #a7bdce; font-size: 11px; font-weight: 750; }
+    .building-card h2 { position: relative; z-index: 1; margin-top: 9px; font-size: 22px; }
+    .building-card p { position: relative; z-index: 1; margin-top: 6px; color: #c6d4df; font-size: 12px; }
+    .building-stat { position: absolute; z-index: 1; right: 19px; bottom: 18px; text-align: right; }
+    .building-stat strong { display: block; color: var(--green); font-size: 26px; }
+    .building-stat span { font-size: 10px; color: #c7d6e3; }
+    .floor-summary { display: grid; gap: 10px; }
+    .floor-row { display: grid; grid-template-columns: 37px 1fr 32px; gap: 10px; align-items: center; }
+    .floor-name { font-size: 12px; font-weight: 850; color: #5f6f82; }
+    .bar { height: 8px; overflow: hidden; border-radius: 99px; background: #eef2f5; }
+    .bar i { display: block; height: 100%; border-radius: inherit; background: var(--green); }
+    .floor-count { text-align: right; font-size: 12px; font-weight: 850; }
+    .feed-note { display: flex; align-items: center; gap: 8px; padding: 11px 12px; border-radius: 12px; background: #f3f7fa; color: #758397; font-size: 11px; line-height: 1.5; }
+    .pulse { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px #1ecb8b1e; }
+    .privacy-note { margin-top: auto; padding-top: 14px; border-top: 1px solid #edf0f3; color: #8b98a8; font-size: 10px; line-height: 1.6; }
+    .guide-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+    .guide-head .subhead { margin-top: 7px; }
+    .live-pill { display: inline-flex; align-items: center; gap: 8px; padding: 9px 11px; color: #167b56; border-radius: 99px; background: var(--green-soft); font-size: 11px; font-weight: 850; white-space: nowrap; }
+    .floor-tabs { display: flex; gap: 8px; margin: 18px 0 14px; }
+    .floor-tab { min-width: 72px; padding: 9px 12px; border: 1px solid #e1e7ed; border-radius: 11px; color: #728095; background: #fff; font-weight: 850; }
+    .floor-tab.active { color: #fff; border-color: var(--navy-2); background: var(--navy-2); }
+    .map-wrap { padding: 16px; border: 1px solid #e1e8ef; border-radius: 18px; background: #f7f9fb; }
+    .map-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .map-top small { color: #8794a3; font-size: 10px; }
+    .legend { display: flex; align-items: center; gap: 12px; color: #718095; font-size: 10px; }
+    .legend i { width: 9px; height: 9px; display: inline-block; margin-right: 4px; border-radius: 3px; vertical-align: -1px; }
+    .legend .free-dot { background: #89dfbd; }
+    .legend .taken-dot { background: #d8e0e8; }
+    .legend .selected-dot { background: var(--blue); }
+    .garage-map { position: relative; display: grid; grid-template-columns: 1fr 90px 1fr; gap: 9px; min-height: 250px; padding: 10px; border-radius: 14px; background: #edf2f5; }
+    .parking-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: center; }
+    .stall {
+      min-height: 55px; border: 1px solid #b8e7d3; border-radius: 9px; color: #187b58; background: #e3f8ee; font-size: 10px; font-weight: 850;
+    }
+    .stall.taken { border-color: #dce3ea; color: #99a5b2; background: #e0e6ec; cursor: not-allowed; }
+    .stall.restricted { border-color: #f0d9ad; color: #af7b24; background: #fff4dd; cursor: not-allowed; }
+    .stall.selected { border: 2px solid var(--blue); color: #fff; background: var(--blue); box-shadow: 0 5px 12px #3978f640; }
+    .stall small { display: block; margin-top: 4px; font-size: 9px; opacity: .78; }
+    .drive-lane { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 13px; border-left: 1px dashed #bac6d2; border-right: 1px dashed #bac6d2; color: #8190a1; text-align: center; font-size: 10px; font-weight: 800; }
+    .route-arrow { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--blue); font-size: 18px; box-shadow: 0 0 0 7px #3978f61b; }
+    .map-destination { position: absolute; top: 8px; right: 12px; padding: 5px 8px; border-radius: 8px; color: #386bd1; background: #e6efff; font-size: 9px; font-weight: 850; }
+    .selection-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 15px 0 11px; }
+    .selection-row strong { display: block; font-size: 16px; }
+    .selection-row span { display: block; margin-top: 4px; color: #78869a; font-size: 11px; }
+    .route-line { display: flex; gap: 10px; align-items: flex-start; margin: 9px 0; color: #617186; font-size: 12px; line-height: 1.5; }
+    .route-no { width: 20px; height: 20px; flex: 0 0 20px; display: grid; place-items: center; border-radius: 50%; color: #3269d2; background: #e7efff; font-size: 10px; font-weight: 900; }
+    .guide-actions { display: flex; gap: 9px; margin-top: 15px; }
+    .guide-actions button { flex: 1; }
+    .arrival-card { display: flex; gap: 13px; align-items: center; padding: 15px; border-radius: 15px; background: #f1faf6; }
+    .arrival-icon { width: 45px; height: 45px; display: grid; place-items: center; flex: 0 0 45px; border-radius: 14px; background: #d7f6e8; color: #16805a; font-size: 20px; }
+    .arrival-card b { display: block; font-size: 13px; }
+    .arrival-card span { display: block; margin-top: 4px; color: #718195; font-size: 11px; }
+    .return-map { position: relative; height: 330px; overflow: hidden; border: 1px solid #e0e7ee; border-radius: 18px; background: #f3f6f8; }
+    .return-map:before, .return-map:after { content: ""; position: absolute; background: #e3e9ee; }
+    .return-map:before { left: 0; right: 0; top: 49%; height: 54px; }
+    .return-map:after { top: 0; bottom: 0; left: 42%; width: 52px; }
+    .map-zone { position: absolute; z-index: 1; display: grid; place-items: center; color: #9aa7b6; font-size: 10px; font-weight: 800; }
+    .zone-building { top: 18px; right: 17px; width: 125px; height: 90px; border-radius: 13px; color: #425a70; background: #dce8ef; }
+    .zone-elevator { left: 29%; top: 41%; width: 80px; height: 66px; border: 1px solid #a5dbca; border-radius: 11px; color: #177b58; background: #e1f8ee; }
+    .zone-car { left: 67%; bottom: 25px; width: 82px; height: 64px; border: 2px solid #477ef0; border-radius: 12px; color: #fff; background: var(--blue); box-shadow: 0 7px 17px #3978f638; }
+    .route-dash { position: absolute; z-index: 2; left: 40%; top: 54%; width: 29%; height: 105px; border-right: 3px dashed #3978f6; border-top: 3px dashed #3978f6; border-radius: 0 18px 0 0; transform: rotate(3deg); }
+    .walking-note { position: absolute; z-index: 3; left: 11px; bottom: 12px; padding: 8px 10px; border-radius: 9px; color: #4266a2; background: #fff; box-shadow: 0 4px 14px #17243710; font-size: 10px; font-weight: 800; }
+    .return-info { display: grid; gap: 11px; }
+    .saved-location { padding: 17px; border-radius: 15px; color: #fff; background: var(--navy-2); }
+    .saved-location small { color: #9fb1c3; font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+    .saved-location h2 { margin-top: 7px; font-size: 23px; }
+    .saved-location p { margin-top: 5px; color: #c4d0dc; font-size: 12px; }
+    .walk-stat { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #edf0f4; color: #66758a; font-size: 12px; }
+    .walk-stat b { color: var(--ink); }
+    .return-actions { display: grid; gap: 9px; margin-top: auto; }
+    .empty-state { padding: 22px; color: #78869a; text-align: center; border: 1px dashed #d1dae3; border-radius: 14px; font-size: 13px; }
+    .footer { display: flex; justify-content: space-between; gap: 20px; padding: 14px 34px; border-top: 1px solid #e6ebf0; color: #8491a1; background: #fbfcfd; font-size: 10px; }
+    .toast { position: fixed; left: 50%; bottom: 25px; z-index: 10; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; padding: 13px 18px; color: #fff; border-radius: 13px; background: #172437; box-shadow: 0 10px 30px #10203333; font-size: 13px; font-weight: 750; transition: .2s; }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    @media (max-width: 920px) {
+      .display { width: min(100% - 18px, 780px); min-height: 0; margin: 9px auto; border-radius: 20px; }
+      .topbar { padding: 0 18px; height: 66px; }
+      .top-meta { gap: 8px; }
+      .top-meta .driver-pill { display: none; }
+      .stagebar { padding: 16px 18px 0; }
+      .workspace { padding: 15px 18px 20px; }
+      .columns { grid-template-columns: 1fr; }
+      .main-card { min-height: 0; padding: 22px; }
+      .side-card { min-height: 0; }
+      .footer { padding: 13px 18px; flex-direction: column; gap: 5px; }
+    }
+    @media (max-width: 540px) {
+      .display { width: 100%; margin: 0; border: 0; border-radius: 0; }
+      .topbar { padding: 0 13px; }
+      .brand-en { display: none; }
+      .demo-badge { padding: 7px 8px; font-size: 10px; }
+      .stagebar { gap: 4px; padding-left: 13px; padding-right: 13px; }
+      .stage { gap: 5px; font-size: 10px; }
+      .stage span { width: 22px; height: 22px; }
+      .stage-line { width: 16px; margin: 0 2px; }
+      .workspace { padding: 12px; }
+      .main-card, .side-card { padding: 18px; border-radius: 16px; }
+      .search-row { flex-direction: column; }
+      .search-row .primary-btn { width: 100%; }
+      .modes { flex-wrap: wrap; }
+      .lot-metrics { flex-wrap: wrap; gap: 7px 12px; }
+      .lot-card { padding: 13px; }
+      .garage-map { grid-template-columns: 1fr 48px 1fr; gap: 5px; padding: 8px; }
+      .stall { min-height: 48px; font-size: 9px; }
+      .map-wrap { padding: 10px; }
+      .legend { gap: 6px; }
+      .legend span { font-size: 9px; }
+      .guide-head { flex-direction: column; }
+      .guide-actions { flex-direction: column; }
+      .return-map { height: 280px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="display">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">P</div>
+        <div><span class="brand-name">주차나침반</span><span class="brand-en">PARK COMPASS</span></div>
+      </div>
+      <div class="top-meta">
+        <div class="demo-badge"><b>시연 모드</b> · 가상 주차 데이터</div>
+        <div class="driver-pill"><span class="avatar">P</span><span id="driverType">방문객</span></div>
+      </div>
+    </header>
+    <nav class="stagebar" aria-label="주차 흐름">
+      <div class="stage active" data-stage="search"><span>1</span>빈자리 찾기</div>
+      <i class="stage-line"></i>
+      <div class="stage" data-stage="guide"><span>2</span>주차 안내</div>
+      <i class="stage-line"></i>
+      <div class="stage" data-stage="return"><span>3</span>차량 찾기</div>
+    </nav>
+    <div class="workspace">
+      <section class="screen visible" id="searchScreen"></section>
+      <section class="screen" id="guideScreen"></section>
+      <section class="screen" id="returnScreen"></section>
+    </div>
+    <footer class="footer">
+      <span>주차면·위치 데이터는 시연용 가상 정보입니다. 실제 시설 API와 차량 위치 권한 연동 전 단계입니다.</span>
+      <span>주행 중에는 화면 조작을 줄이고 음성 안내를 이용하세요.</span>
+    </footer>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const facilities = [
+      { id: "haeoreum", name: "해오름 주상복합", address: "서울 · 102동 방문객 구역", walk: 2, fee: "방문 등록", free: 18, total: 64, fresh: "방금 갱신", recommended: true,
+        floors: { "B1": { free: 4, total: 18 }, "B2": { free: 9, total: 26 }, "B3": { free: 5, total: 20 } },
+        stalls: { "B1": ["taken","free","taken","free","taken","taken","free","restricted","free","taken","taken","free"], "B2": ["free","taken","free","taken","free","taken","free","free","taken","free","restricted","free"], "B3": ["taken","taken","free","free","taken","free","taken","free","taken","free","taken","free"] } },
+      { id: "river", name: "리버뷰 센트럴 아파트", address: "서울 · 104동 지하주차장", walk: 4, fee: "입주민 우선", free: 11, total: 52, fresh: "8초 전", recommended: false,
+        floors: { "B1": { free: 2, total: 16 }, "B2": { free: 5, total: 20 }, "B3": { free: 4, total: 16 } },
+        stalls: { "B1": ["taken","free","taken","taken","free","taken","taken","free","taken","taken","free","taken"], "B2": ["free","taken","free","taken","taken","free","taken","free","taken","free","taken","taken"], "B3": ["taken","free","taken","free","taken","taken","free","taken","taken","free","taken","free"] } },
+      { id: "central", name: "센트럴파크 복합단지", address: "서울 · 상가/주거 공용", walk: 6, fee: "방문 등록", free: 27, total: 88, fresh: "12초 전", recommended: false,
+        floors: { "B1": { free: 10, total: 32 }, "B2": { free: 8, total: 28 }, "B3": { free: 9, total: 28 } },
+        stalls: { "B1": ["free","taken","free","free","taken","free","taken","free","free","taken","free","free"], "B2": ["taken","free","taken","free","free","taken","free","taken","free","free","taken","free"], "B3": ["free","taken","free","taken","free","free","taken","free","taken","free","free","taken"] } }
+    ];
+    const stallIds = ["C10","C11","C12","C13","C14","C15","C16","C17","C18","C19","C20","C21"];
+    let state = { view: "search", userType: "방문객", destination: "해오름 주상복합 · 102동", query: "", facility: facilities[0], floor: "B2", selectedStall: null, parked: null };
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    }
+    function showToast(message) {
+      const el = document.getElementById("toast");
+      el.textContent = message;
+      el.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => el.classList.remove("show"), 2200);
+    }
+    function setView(view) {
+      state.view = view;
+      document.querySelectorAll(".screen").forEach(el => el.classList.remove("visible"));
+      const target = document.getElementById(view + "Screen");
+      if (target) target.classList.add("visible");
+      document.querySelectorAll(".stage").forEach(el => {
+        const stage = el.dataset.stage;
+        el.classList.toggle("active", stage === view);
+        el.classList.toggle("done", ["search","guide","return"].indexOf(stage) < ["search","guide","return"].indexOf(view));
+      });
+      render();
+    }
+    function filteredFacilities() {
+      const terms = state.query.split(/[·,]/).map(term => term.trim().toLowerCase()).filter(Boolean);
+      return facilities.filter(f => {
+        const haystack = (f.name + " " + f.address).toLowerCase();
+        return !terms.length || terms.every(term => haystack.includes(term));
+      });
+    }
+    function renderSearch() {
+      const visible = filteredFacilities();
+      const list = visible.length ? visible.map(f => `
+        <article class="lot-card ${f.recommended ? "recommended" : ""}">
+          <div>
+            <div class="lot-title">${escapeHtml(f.name)} ${f.recommended ? '<span class="recommend">목적지 추천</span>' : ""}</div>
+            <div class="lot-meta">${escapeHtml(f.address)}</div>
+          </div>
+          <div class="available"><strong>${f.free}</strong><span>빈자리 후보</span></div>
+          <div class="lot-metrics"><span>목적 동까지 <b>${f.walk}분</b></span><span>·</span><span>${escapeHtml(f.fee)}</span><span>·</span><span>지하 ${Object.keys(f.floors).length}개 층</span></div>
+          <div class="lot-action"><span>주차정보 ${escapeHtml(f.fresh)} · 시연용 데이터</span><button class="text-btn" data-facility="${f.id}">이 주차장으로 안내 →</button></div>
+        </article>`).join("") : '<div class="empty-state">검색 결과가 없습니다. 단지 이름을 확인해 주세요.</div>';
+      document.getElementById("searchScreen").innerHTML = `
+        <div class="columns">
+          <main class="main-card">
+            <div class="eyebrow">ARRIVE WITHOUT THE PARKING LOOP</div>
+            <h1>집에 도착하기 전,<br>주차부터 준비해요.</h1>
+            <p class="subhead">목적 동에 가까운 빈자리 후보를 찾고, 차가 움직이는 동안에는 필요한 안내만 간결하게 보여드려요.</p>
+            <div class="search-row">
+              <div class="input-wrap"><label for="destinationInput">목적지 또는 단지</label><input id="destinationInput" value="${escapeHtml(state.destination)}" autocomplete="off"></div>
+              <button class="primary-btn" id="searchButton">주차장 찾기</button>
+            </div>
+            <div class="modes"><span class="mode-label">이용 구분</span>
+              <button class="mode ${state.userType === "방문객" ? "active" : ""}" data-user="방문객">방문객</button>
+              <button class="mode ${state.userType === "입주민" ? "active" : ""}" data-user="입주민">입주민</button>
+              <button class="mode" id="evMode">전기차 자리</button>
+            </div>
+            <div class="section-row"><h2>지금 이용할 수 있는 주차장</h2><small>${visible.length}곳 · 점유 데이터로 정렬</small></div>
+            <div class="lot-list">${list}</div>
+          </main>
+          <aside class="side-card">
+            <div class="destination-head"><div><h2>도착할 곳</h2><p>방문 목적 동과 가까운 곳을 우선해요.</p></div><div class="pin">⌖</div></div>
+            <div class="building-card"><span class="building-label">DESTINATION</span><h2>해오름 주상복합</h2><p>102동 · 남측 출입구</p><div class="building-stat"><strong>2분</strong><span>추천 구역에서 도보</span></div></div>
+            <div class="section-row" style="margin:0"><h3>해오름 주상복합 층별 여유</h3><small>빈자리 후보</small></div>
+            <div class="floor-summary">${floorSummary(facilities[0])}</div>
+            <div class="feed-note"><i class="pulse"></i><span>주차 운영 데이터가 제공된다는 가정의 시연입니다. 실제 잔여면과 다를 수 있어요.</span></div>
+            <div class="privacy-note">방문객에게는 초대받은 단지와 허용 구역만 표시하는 방식으로 설계합니다. 차량번호나 다른 운전자 위치는 공개하지 않습니다.</div>
+          </aside>
+        </div>`;
+      document.getElementById("driverType").textContent = state.userType;
+      document.getElementById("destinationInput").addEventListener("input", e => { state.destination = e.target.value; });
+      document.getElementById("searchButton").addEventListener("click", () => {
+        state.query = document.getElementById("destinationInput").value.trim();
+        renderSearch();
+      });
+      document.getElementById("destinationInput").addEventListener("keydown", e => { if(e.key === "Enter") document.getElementById("searchButton").click(); });
+      document.querySelectorAll("[data-user]").forEach(btn => btn.addEventListener("click", () => { state.userType = btn.dataset.user; renderSearch(); }));
+      document.querySelectorAll("[data-facility]").forEach(btn => btn.addEventListener("click", () => {
+        state.facility = facilities.find(f => f.id === btn.dataset.facility) || facilities[0];
+        const availableFloors = Object.keys(state.facility.floors);
+        state.floor = availableFloors.includes("B2") ? "B2" : (availableFloors[0] || "B1");
+        state.selectedStall = firstFreeStall(state.floor);
+        setView("guide");
+      }));
+      document.getElementById("evMode").addEventListener("click", () => showToast("전기차 조건은 시설 데이터 연동 후 적용할 수 있어요."));
+    }
+    function floorSummary(facility) {
+      return Object.entries(facility.floors).map(([floor, info]) => {
+        const pct = Math.max(4, Math.round(info.free / info.total * 100));
+        return `<div class="floor-row"><span class="floor-name">${floor}</span><div class="bar"><i style="width:${pct}%"></i></div><span class="floor-count">${info.free}</span></div>`;
+      }).join("");
+    }
+    function firstFreeStall(floor) {
+      const statuses = state.facility.stalls[floor] || [];
+      const index = statuses.indexOf("free");
+      return index >= 0 ? stallIds[index] : stallIds[0];
+    }
+    function renderStallSide(side, statuses, offset) {
+      return `<div class="parking-side">${statuses.slice(offset, offset + 6).map((status, n) => {
+        const id = stallIds[offset + n];
+        const selected = state.selectedStall === id;
+        const className = selected ? "selected" : status === "taken" ? "taken" : status === "restricted" ? "restricted" : "";
+        const label = selected ? "선택" : status === "taken" ? "사용 중" : status === "restricted" ? "제한" : "빈자리";
+        return `<button class="stall ${className}" ${status === "free" ? `data-stall="${id}"` : "disabled"}>${id}<small>${label}</small></button>`;
+      }).join("")}</div>`;
+    }
+    function renderGuide() {
+      const f = state.facility;
+      const floors = Object.keys(f.floors).sort().reverse();
+      if (!f.floors[state.floor]) state.floor = floors[0];
+      const statuses = f.stalls[state.floor] || [];
+      const selectedIndex = stallIds.indexOf(state.selectedStall);
+      const selectedWalk = selectedIndex >= 0 ? 35 + selectedIndex * 3 : 42;
+      document.getElementById("guideScreen").innerHTML = `
+        <div class="columns">
+          <main class="main-card">
+            <div class="guide-head"><div><div class="eyebrow">INDOOR PARKING GUIDE</div><h1>${escapeHtml(f.name)}</h1><p class="subhead">${escapeHtml(state.userType)} 허용 구역 · 목적지 ${escapeHtml(state.destination.split("·").pop().trim())}</p></div><div class="live-pill"><i class="pulse"></i>점유 상태 반영</div></div>
+            <div class="floor-tabs">${floors.map(fl => `<button class="floor-tab ${fl === state.floor ? "active" : ""}" data-floor="${fl}">${fl}</button>`).join("")}</div>
+            <div class="map-wrap">
+              <div class="map-top"><b>${state.floor} · 주차 구역</b><div class="legend"><span><i class="free-dot"></i>빈자리</span><span><i class="taken-dot"></i>사용 중</span><span><i class="selected-dot"></i>추천</span></div></div>
+              <div class="garage-map"><span class="map-destination">102동 방향 ↑</span>
+                ${renderStallSide("left", statuses, 0)}
+                <div class="drive-lane"><span>입구 방향</span><div class="route-arrow">↑</div><span>주행 통로</span></div>
+                ${renderStallSide("right", statuses, 6)}
+              </div>
+            </div>
+            <div class="selection-row"><div><strong>${state.floor} · ${state.selectedStall || "후보 선택"}</strong><span>102동까지 도보 약 2분 · 방문 허용 · 상태 방금 갱신</span></div><button class="secondary-btn" id="rerouteButton">후보 새로고침</button></div>
+            <div class="feed-note"><i class="pulse"></i><span>지도는 흐름 시연용입니다. 실제 안내에는 단지별 통로·주차면 지도와 승인된 차량 위치 API가 필요합니다.</span></div>
+          </main>
+          <aside class="side-card">
+            <div><div class="eyebrow">NEXT INSTRUCTION</div><h2 style="margin-top:8px">빈자리까지 안내할게요.</h2><p class="subhead" style="margin-top:7px">운전 중에는 짧은 음성 안내와 큰 방향 표식만 제공합니다.</p></div>
+            <div class="arrival-card"><div class="arrival-icon">↗</div><div><b>현재 위치 · B2 진입 통로</b><span>실내 지도 기준 위치를 확인 중</span></div></div>
+            <div><div class="route-line"><span class="route-no">1</span><span>주행 통로를 따라 C 구역으로 이동합니다.</span></div><div class="route-line"><span class="route-no">2</span><span>C 구역에서 다음 빈자리 <b>${state.selectedStall || "C12"}</b>를 확인합니다.</span></div><div class="route-line"><span class="route-no">3</span><span>주차 후 완료를 누르면 위치를 저장합니다.</span></div></div>
+            <div class="return-actions"><button class="primary-btn" id="parkButton">여기에 주차 완료</button><button class="secondary-btn" id="backButton">주차장 목록 보기</button></div>
+            <div class="privacy-note">빈자리는 실시간 변경될 수 있습니다. 운영사 예약 API가 없는 경우 앱은 주차면을 예약하지 않습니다.</div>
+          </aside>
+        </div>`;
+      document.querySelectorAll("[data-floor]").forEach(btn => btn.addEventListener("click", () => {
+        state.floor = btn.dataset.floor;
+        state.selectedStall = firstFreeStall(state.floor);
+        renderGuide();
+      }));
+      document.querySelectorAll("[data-stall]").forEach(btn => btn.addEventListener("click", () => {
+        state.selectedStall = btn.dataset.stall;
+        renderGuide();
+      }));
+      document.getElementById("parkButton").addEventListener("click", () => {
+        if (!state.selectedStall) { showToast("먼저 빈자리 후보를 선택해 주세요."); return; }
+        state.parked = { facility: f.name, floor: state.floor, stall: state.selectedStall, elevator: "102동 남측 엘리베이터" };
+        setView("return");
+      });
+      document.getElementById("backButton").addEventListener("click", () => setView("search"));
+      document.getElementById("rerouteButton").addEventListener("click", () => {
+        const options = statuses.map((s, i) => s === "free" ? stallIds[i] : null).filter(Boolean);
+        if (!options.length) { showToast("이 층에 빈자리 후보가 없습니다. 다른 층을 선택해 주세요."); return; }
+        state.selectedStall = options.find(id => id !== state.selectedStall) || options[0];
+        renderGuide();
+        showToast("최신 점유 상태로 후보를 다시 정렬했어요.");
+      });
+    }
+    function renderReturn() {
+      const parked = state.parked;
+      if (!parked) {
+        document.getElementById("returnScreen").innerHTML = '<div class="empty-state">저장된 차량 위치가 없습니다. 먼저 주차 안내를 완료해 주세요.</div>';
+        return;
+      }
+      document.getElementById("returnScreen").innerHTML = `
+        <div class="columns">
+          <main class="main-card">
+            <div class="eyebrow">YOUR CAR IS SAVED</div><h1>주차 위치를 기억해 두었어요.</h1>
+            <p class="subhead">돌아올 때 저장한 주차면과 가까운 엘리베이터를 확인할 수 있습니다.</p>
+            <div class="return-map" style="margin-top:23px">
+              <div class="map-zone zone-building">102동 남측 출입구</div>
+              <div class="map-zone zone-elevator">엘리베이터</div>
+              <div class="map-zone zone-car">내 차<br>${parked.floor} ${parked.stall}</div>
+              <div class="route-dash"></div>
+              <div class="walking-note">파란 경로 · 도보로 차량까지 약 1분</div>
+            </div>
+          </main>
+          <aside class="side-card">
+            <div><div class="eyebrow">PARKED LOCATION</div><h2 style="margin-top:8px">다시 찾기 쉽게 저장했어요.</h2></div>
+            <div class="saved-location"><small>주차 위치</small><h2>${parked.floor} · ${parked.stall}</h2><p>${escapeHtml(parked.facility)}</p></div>
+            <div class="return-info"><div class="walk-stat"><span>가까운 엘리베이터</span><b>${parked.elevator}</b></div><div class="walk-stat"><span>주차면 상태</span><b>저장 시점 확인</b></div><div class="walk-stat"><span>귀환 경로</span><b>도보 약 1분</b></div></div>
+            <div class="return-actions"><button class="primary-btn" id="findCarButton">차량 위치 확인</button><button class="secondary-btn" id="newSearchButton">새 주차장 찾기</button></div>
+            <div class="privacy-note">저장 위치는 이 이용 세션에서만 보입니다. 운영 환경에서는 단지 권한과 개인정보 보존 정책을 적용합니다.</div>
+          </aside>
+        </div>`;
+      document.getElementById("findCarButton").addEventListener("click", () => showToast(`${parked.floor} ${parked.stall} 위치로 돌아가는 길을 표시 중입니다.`));
+      document.getElementById("newSearchButton").addEventListener("click", () => { state.parked = null; state.query = ""; setView("search"); });
+    }
+    function render() {
+      if (state.view === "search") renderSearch();
+      if (state.view === "guide") renderGuide();
+      if (state.view === "return") renderReturn();
+    }
+    render();
+  </script>
+</body>
+</html>
+
