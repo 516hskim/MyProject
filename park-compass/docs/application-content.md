@@ -30,5 +30,5 @@ Pleos Connect용 Kotlin 앱과 단지 주차 API를 연동합니다. NaviHelper�
 
 ## 7. 참고자료
 
-첨부 시제품과 GitHub용 문서 묶음: `park-compass-github.zip`. 가상 데이터 기반 화면 시제품은 `prototype/index.html`, 기술 계획은 `docs/technical-feasibility.md`, API 계약 초안은 `docs/parking-data-contract.md`입니다.
+GitHub 저장소: https://github.com/516hskim/MyProject/tree/main/park-compass. 화면 시제품은 `prototype/index.html`, 기술 계획은 `docs/technical-feasibility.md`, API 계약 초안은 `docs/parking-data-contract.md`입니다. 시제품은 가상 시설 데이터를 사용합니다.
 
