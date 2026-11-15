@@ -64,17 +64,14 @@ docs/application-content.md  신청서에 입력한 본문
 - [Pleos FusedLocation SDK](https://document.pleos.ai/docs/pleos-only/connect-sdk-pleos/FusedLocation/intro)
 - [Pleos NaviHelper SDK](https://document.pleos.ai/api-reference/connect-sdk-pleos/NaviHelper/intro)
 
-## GitHub에 올리기
+## GitHub 저장소
 
-이 묶음은 GitHub에 올릴 수 있는 로컬 저장소 초안입니다. 원격 저장소는 생성하거나 공개하지 않았습니다.
+앱 시제품과 설계 문서를 [`516hskim/MyProject/park-compass`](https://github.com/516hskim/MyProject/tree/main/park-compass)에 올렸습니다. 이 저장소에는 앱·문서만 포함되어 있으며 신청서 DOCX나 참가자 개인정보는 포함하지 않았습니다.
 
 ```bash
-git init -b main
-git add .
-git commit -m "Add Park Compass prototype and proposal"
-git remote add origin <your-repository-url>
-git push -u origin main
+git clone https://github.com/516hskim/MyProject.git
+cd MyProject/park-compass
 ```
 
-공개 전에 실제 시설의 주차면 좌표, 차량 위치 로그, 방문자 정보, 개인 연락처가 저장소에 포함되지 않았는지 확인하세요. 현재 시제품에는 가상 데이터만 들어 있습니다.
+시제품의 주차장과 점유 정보는 가상 데이터입니다. 실제 시설의 주차면 좌표, 차량 위치 로그, 방문자 정보는 저장소에 넣지 마세요.
 
